@@ -7,7 +7,25 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
+}
+
+model Supervisor {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Program {
+  id        String   @id @default(cuid())
+  name      String
+  mentors   MentorProgram[]
+  parents   Parent[]
+  youngPeople YoungPerson[]
+  matches   Match[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Mentor {
@@ -15,16 +33,27 @@ model Mentor {
   name        String
   email       String   @unique
   phoneNumber String   @unique
+  programs    MentorProgram[]
   isActive    Boolean  @default(true)
-  matches     Match[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model MentorProgram {
+  mentorId  String
+  mentor    Mentor  @relation(fields: [mentorId], references: [id])
+  programId String
+  program   Program @relation(fields: [programId], references: [id])
+
+  @@id([mentorId, programId])
 }
 
 model Parent {
   id          String   @id @default(cuid())
   name        String
   phoneNumber String   @unique
+  programId   String
+  program     Program  @relation(fields: [programId], references: [id])
   matches     Match[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -33,28 +62,23 @@ model Parent {
 model YoungPerson {
   id        String   @id @default(cuid())
   name      String
+  programId String
+  program   Program  @relation(fields: [programId], references: [id])
   matches   Match[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Supervisor {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Match {
   id             String      @id @default(cuid())
+  programId      String
+  program        Program     @relation(fields: [programId], references: [id])
   mentorId       String
-  mentor         Mentor      @relation(fields: [mentorId], references: [id])
   parentId       String
   parent         Parent      @relation(fields: [parentId], references: [id])
   youngPersonId  String
   youngPerson    YoungPerson @relation(fields: [youngPersonId], references: [id])
-  status         String      @default("Active") // Active, Suspended, Terminated
+  status         String      @default("Active")
   proxyNumber    String
   sessions       Session[]
   messages       Message[]

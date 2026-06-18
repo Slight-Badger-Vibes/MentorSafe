@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { cookies } from "next/headers";
 
 export default async function MentorDashboard() {
   const supabase = await createClient();
@@ -11,10 +12,18 @@ export default async function MentorDashboard() {
     redirect("/login/mentor");
   }
 
+  const cookieStore = await cookies();
+  const activeProgramId = cookieStore.get("activeProgramId")?.value;
+
+  if (!activeProgramId) {
+    redirect("/mentor/select-program");
+  }
+
   const mentor = await prisma.mentor.findUnique({
     where: { email: user.email! },
     include: {
       matches: {
+        where: { programId: activeProgramId },
         include: {
           youngPerson: true,
           parent: true,
